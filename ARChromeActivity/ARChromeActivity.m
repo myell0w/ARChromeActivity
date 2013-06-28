@@ -52,15 +52,42 @@
 }
 
 - (BOOL)canPerformWithActivityItems:(NSArray *)activityItems {
-	return [[activityItems lastObject] isKindOfClass:[NSURL class]] && [[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"googlechrome-x-callback://"]];
+    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"googlechrome-x-callback://"]]) {
+        return NO;
+    }
+
+    for (id activityItem in activityItems) {
+        NSURL *URL = nil;
+
+        if ([activityItem isKindOfClass:[NSURL class]]) {
+            URL = activityItem;
+        } else if ([activityItem isKindOfClass:[NSString class]]) {
+            URL = [NSURL URLWithString:activityItem];
+        }
+
+		if (URL != nil && [[UIApplication sharedApplication] canOpenURL:URL]) {
+			return YES;
+		}
+	}
+	
+	return NO;
 }
 
 - (void)prepareWithActivityItems:(NSArray *)activityItems {
-	_activityURL = [activityItems lastObject];
+    for (id activityItem in activityItems) {
+		if ([activityItem isKindOfClass:[NSURL class]]) {
+			_activityURL = activityItem;
+		} else if ([activityItem isKindOfClass:[NSString class]]) {
+            _activityURL = [NSURL URLWithString:activityItem];
+        }
+
+        if (_activityURL != nil && [[UIApplication sharedApplication] canOpenURL:_activityURL]) {
+            break;
+        }
+	}
 }
 
 - (void)performActivity {
-	
     NSString *openingURL = [_activityURL.absoluteString stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSString *callbackURL = [self.callbackURL.absoluteString stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSString *sourceName = [self.callbackSource stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
